@@ -553,7 +553,7 @@ def update_charts(status, conf, session, suites=None):
  STAGE_STATS,
  STAGE_CACHE,
  STAGE_CHARTS,) = range(1, 7)
-__STAGES = {
+STAGES = {
     'extract': STAGE_EXTRACT,
     'suites': STAGE_SUITES,
     'gc': STAGE_GC,
@@ -561,17 +561,10 @@ __STAGES = {
     'cache': STAGE_CACHE,
     'charts': STAGE_CHARTS,
 }
-__STAGE2STR = {v: k for k, v in __STAGES.items()}
-UPDATE_STAGES = set(__STAGES.values())
+__STAGE2STR = {v: k for k, v in STAGES.items()}
+UPDATE_STAGES = set(STAGES.values())
 
 
-def parse_stage(s):
-    try:
-        return __STAGES[s]
-    except KeyError:
-        raise ValueError('unknown update stage %s' % s)
-
-parse_stages = lambda s: set(map(parse_stage, s.split()))
 
 
 def pp_stage(stage):
