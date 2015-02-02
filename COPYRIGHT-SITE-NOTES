@@ -1,0 +1,13 @@
+.. vim: set ft=txt sw=2 ts=2 sts=2 et:
+
+use yaml for better configuration.
+documentation can be seen at: http://pyyaml.org/wiki/PyYAMLDocumentation
+full specification: http://yaml.org/spec/1.1/
+and a simple wikipedia version: http://en.wikipedia.org/wiki/YAML
+and the best: http://learnxinyminutes.com/docs/yaml/
+
+    sudo apt-get install python-yaml
+
+some caveats:
+  http://stackoverflow.com/questions/5484016/how-can-i-do-string-concatenation-or-string-replacement-in-yaml
+
