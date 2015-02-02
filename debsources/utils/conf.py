@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+
 import importlib
 import errno
 import os
@@ -27,7 +29,7 @@ from debian import deb822
 from debsources import updater
 # per custom, in order not to be confused with the builtin logging,
 # we add a trailing underscore.
-from debsources.utils import logging_
+from debsources.utils import logging as logging_
 from debsources.updater import STAGES
 
 # NB try not to pollute the global namespace
@@ -37,33 +39,33 @@ class YamlTags(object):
     Custom yaml tags.
     """
 
-    @static
+    @staticmethod
     def join(loader, node):
         seq = loader.construct_sequence(node)
         return ''.join([str(i) for i in seq])
 
-    @static
+    @staticmethod
     def loglevel(loader, node):
-        level_name = load.construct_scalar(node)
+        level_name = loader.construct_scalar(node)
         return logging_.LOG_LEVELS[level_name]
 
-    @static
+    @staticmethod
     def parse_stage(loader, node):
-        seq = load.construct_sequence(node)
+        seq = loader.construct_sequence(node)
         return {STAGES[s] for s in seq}
 
-    @static
+    @staticmethod
     def exclude(loader, node):
-        exclude_conf = load.construct_scalar(node)
+        exclude_conf = YamlTags.join(loader, node)
         exclude_specs = []
-            if os.path.exists(exclude_conf):
-                # parse file exclusion specifications
-                with open(exclude_conf) as f:
-                    exclude_specs = list(deb822.Deb822.iter_paragraphs(f))
+        if os.path.exists(exclude_conf):
+            # parse file exclusion specifications
+            with open(exclude_conf) as f:
+                exclude_specs = list(deb822.Deb822.iter_paragraphs(f))
         return exclude_specs
 
-    @static
-    def to_upper(loade, node):
+    @staticmethod
+    def to_upper(loader, node):
         return None
 
 # register tags
@@ -79,15 +81,20 @@ class DebsConf(object):
     Debsources configuration reader.
     """
 
-    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    root_dir = os.path.abspath(__file__)
+    for _ in range(3):
+        root_dir = os.path.dirname(root_dir)
 
     probable_confs = [
-        '/etc/debsources/config.ini',
-        '/srv/debsources/etc/config.local.ini',
-        '/srv/debsources/etc/config.ini',
-        os.path.join(root_dir, 'etc', 'config.local.ini'),
-        os.path.join(root_dir, 'etc', 'config.ini'),
+        '/etc/debsources/config.yaml',
+        '/srv/debsources/etc/config.local.yaml',
+        '/srv/debsources/etc/config.yaml',
+        os.path.join(root_dir, 'etc', 'config.local.yaml'),
+        os.path.join(root_dir, 'etc', 'config.yaml'),
     ]
+
+    def __init__(self):
+        self.config = None
 
     def guess_conf(self):
         """
@@ -105,18 +112,24 @@ class DebsConf(object):
 
         raise EnvironmentError(
             errno.ENOENT,
-            'No configuration file found in {}'.format(probable_confs))
+            'No configuration file found in {}'.format(self.probable_confs))
 
-    def load_conf(self, conf, section="infra"):
+    def parse_section(self, conf=None, section="infra"):
         """
         Load configuration from `conf` and return it as a (typed) dictionary
-        for the section.
+        for the section. If `conf` is not provided, then guess it.
         """
+        # already loaded
+        if self.config is not None:
+            return self.config[section]
+
+        if conf is None:
+            conf = self.guess_conf()
+
+        self.config = yaml.load(file(conf))
         # no check on if the section exists in the configuration file.
         # principle: if err, then let it err (early).
-        settings = yaml.load(file(conf))[section]
-        settings['conf_file'] = conf
-
+        settings = self.config[section]
         return settings
 
 

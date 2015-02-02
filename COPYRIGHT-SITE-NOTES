@@ -1,4 +1,7 @@
-.. vim: set ft=txt sw=2 ts=2 sts=2 et:
+.. vim: set ft=rst:
+
+yaml
+=====
 
 use yaml for better configuration.
 documentation can be seen at: http://pyyaml.org/wiki/PyYAMLDocumentation
@@ -10,4 +13,10 @@ and the best: http://learnxinyminutes.com/docs/yaml/
 
 some caveats:
   http://stackoverflow.com/questions/5484016/how-can-i-do-string-concatenation-or-string-replacement-in-yaml
+
+
+py.test
+========
+
+sudo apt-get install python-pytest
 

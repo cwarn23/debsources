@@ -7,21 +7,21 @@
 # NB
 # !join concatenates the strings
 # !loglevel maps the level name to a integer represented loglevel
-# see debsources.utils.conf for detail
+# see debsources.utils.conf for more
 
 ---
 default:
-  db_uri:      	 &db_uri postgresql:///debsources
-  root_dir:    	 &root_dir /srv/debsources
+  db_uri:         &db_uri postgresql:///debsources
+  root_dir:       &root_dir /srv/debsources
   backup_dir:    !join [*root_dir, /backup]
-  cache_dir:   	 !join [*root_dir, /backup]
+  cache_dir:      !join [*root_dir, /backup]
   local_dir:     &local_dir !join [*root_dir, /backup]
-  sources_dir: 	 !join [*root_dir, /backup]
-  mirror_dir:    	 /srv/debian-mirror
+  sources_dir:    !join [*root_dir, /backup]
+  mirror_dir:       /srv/debian-mirror
   mirror_archive_dir: /srv/debian-archive
   log_dir:        &log_dir  /var/log/debsources
-  log_level:     	!loglevel info
-  dry_run:     	  false
+  log_level:       !loglevel info
+  dry_run:         false
 
 infra:
   mirror_host:     ftp.de.debian.org
@@ -42,8 +42,8 @@ infra:
     - main
     - contrib
     - non-free
-  bin_dir:       	 !join [*root_dir, /bin]
-  expire_days:   	 7
+  bin_dir:          !join [*root_dir, /bin]
+  expire_days:      7
   backends:
     ? db
     ? fs
@@ -63,61 +63,61 @@ infra:
     - metrics
     - ctags
   log_file:     !join [*log_dir, /debsources.log]
-  exclude:  !exclude !join [*local_dir, /exclude.conf]
+  exclude:  !exclude [*local_dir, /exclude.conf]
 
 
-# settings for the Flask app
-# we use ``to_upper`` here because Flask only recognize uppercase var.
-app: !to_upper
-  # the domain of the webapp, used in documentation
-  domain: sources.debian.net
+# # settings for the Flask app
+# # we use ``to_upper`` here because Flask only recognize uppercase var.
+# app: !to_upper
+#   # the domain of the webapp, used in documentation
+#   domain: sources.debian.net
 
-    # link to Debsources source code (might be changed for, e.g., AGPL compliance)
-  gitweb_url: https://anonscm.debian.org/gitweb/?p=qa/debsources.git
+#   # link to Debsources source code (might be changed for, e.g., AGPL compliance)
+#   gitweb_url: https://anonscm.debian.org/gitweb/?p=qa/debsources.git
 
-  # the secret key for session signing
-  # secret_key: some_hash # not in use
+#   # the secret key for session signing
+#   # secret_key: some_hash # not in use
 
-  # CSRF token for WTForms
-  # we don't have any form which writes data
-  # python-flaskext.wtf < 0.9
-  csrf_enabled: false
-    # python-flaskext.wtf >= 0.9
-  wtf_csrf_enabled: false
+#   # CSRF token for WTForms
+#   # we don't have any form which writes data
+#   # python-flaskext.wtf < 0.9
+#   csrf_enabled: false
+#   # python-flaskext.wtf >= 0.9
+#   wtf_csrf_enabled: false
 
-  # related session key:
-  # csrf_session_key: some_hash # not in use
+#   # related session key:
+#   # csrf_session_key: some_hash # not in use
 
-  # the place where the browser can GET the highlight.js library (JS + CSS)
-  highlight_js_folder: /javascript/highlight
+#   # the place where the browser can GET the highlight.js library (JS + CSS)
+#   highlight_js_folder: /javascript/highlight
 
-  # show detailed "ls -f" format on /src/package/dir
-  dir_ls_long: true
+#   # show detailed "ls -f" format on /src/package/dir
+#   dir_ls_long: true
 
-  # CSS style for highlight.js
-  # see https://highlightjs.org/static/demo/
-  # highlight_style: default
-  highlight_style: googlecode
+#   # CSS style for highlight.js
+#   # see https://highlightjs.org/static/demo/
+#   # highlight_style: default
+#   highlight_style: googlecode
 
-  # the local absolute URL where icons are rooted
-  icons_folder: /icons/Tango/
+#   # the local absolute URL where icons are rooted
+#   icons_folder: /icons/Tango/
 
-  # echoes or not the SQL requests to stdout (can be logged with Apache):
-  sqlalchemy_echo: false
+#   # echoes or not the SQL requests to stdout (can be logged with Apache):
+#   sqlalchemy_echo: false
 
-  # the uri of the database
-  sqlalchemy_database_uri: &db_uri
+#   # the uri of the database
+#   sqlalchemy_database_uri: &db_uri
 
-  # where the sources are accessible for a browser, for raw links:
-  sources_static: /data
+#   # where the sources are accessible for a browser, for raw links:
+#   sources_static: /data
 
-  # /!\ don't set Debug to True in production
-  debug: false
+#   # /!\ don't set Debug to True in production
+#   debug: false
 
-  # set to "true" to serve auxiliary static files (JavaScript, icons) via Flask
-  # serve_static_files: false
+#   # set to "true" to serve auxiliary static files (JavaScript, icons) via Flask
+#   # serve_static_files: false
 
-  # where to log webapp specific information
-  log_file: !join [log_dir, /webapp.log]
+#   # where to log webapp specific information
+#   log_file: !join [log_dir, /webapp.log]
 
-...
+# ...
