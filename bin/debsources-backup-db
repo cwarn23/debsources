@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-conffile=`python -c 'from debsources import mainlib; print(mainlib.guess_conffile())'`
+conffile=`python -c 'from debsources.utils.conf import DebsConf; print(DebsConf.guess_conf_path())'`
 if [ $? -ne 0 ]
 then
     echo "Configuration file not found, aborting."

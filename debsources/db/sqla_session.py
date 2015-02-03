@@ -21,11 +21,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 
-def _get_engine_session(url, verbose=True):
+def get_engine_session(url, verbose=True):
     engine = create_engine(url, echo=verbose)
     session = scoped_session(sessionmaker(bind=engine))
     return engine, session
 
 
-def _close_session(session):
+def close_session(session):
     session.remove()

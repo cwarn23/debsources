@@ -16,33 +16,33 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import ConfigParser as configparser
 import importlib
 import logging
 import os
 import string
 from collections import defaultdict
 
-import yaml
 from debian import deb822
 
 from debsources import updater
 
-# NB try not to pollute the global namespace
+# TODO split configuration entry to a separate file: it's too complex
+# TODO more uniform handling of config typing/defaults: it's too brittle
 
-
-# DEFAULT_CONFIG = defaultdict(dict)  # a non-existing key will return {}
-# DEFAULT_CONFIG.update({
-#     'infra': {
-#         'dry_run':     'false',
-#         'backends':    'db fs hooks hooks.db hooks.fs',
-#         'stages':      'extract suites gc stats cache charts',
-#         'log_level':   'info',
-#         'expire_days': '0',
-#         'force_triggers': [],
-#         'single_transaction': 'true',
-#         },
-#     'webapp': {},
-# })
+DEFAULT_CONFIG = defaultdict(dict)  # a non-existing key will return {}
+DEFAULT_CONFIG.update({
+    'infra': {
+        'dry_run':     'false',
+        'backends':    'db fs hooks hooks.db hooks.fs',
+        'stages':      'extract suites gc stats cache charts',
+        'log_level':   'info',
+        'expire_days': '0',
+        'force_triggers': [],
+        'single_transaction': 'true',
+        },
+    'webapp': {},
+})
 
 LOG_FMT_FILE = '%(asctime)s %(module)s:%(levelname)s %(message)s'
 LOG_FMT_STDERR = '%(module)s:%(levelname)s %(message)s'

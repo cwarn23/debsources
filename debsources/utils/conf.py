@@ -65,56 +65,63 @@ class YamlTags(object):
         return exclude_specs
 
     @staticmethod
-    def to_upper(loader, node):
-        return None
+    def upper(loader, node):
+        mapping = loader.construct_mapping(node)
+        upper_mapping = {k.upper():v for k,v in mapping.iteritems()}
+        return upper_mapping
 
 # register tags
 yaml.add_constructor('!join', YamlTags.join)
 yaml.add_constructor('!loglevel', YamlTags.loglevel)
 yaml.add_constructor('!parse_stage', YamlTags.parse_stage)
 yaml.add_constructor('!exclude', YamlTags.exclude)
-yaml.add_constructor('!to_upper', YamlTags.to_upper)
+yaml.add_constructor('!upper', YamlTags.upper)
 
+# help other module to find out the root
+ROOT_DIR = os.path.abspath(__file__)
+for _ in range(3):
+    ROOT_DIR = os.path.dirname(ROOT_DIR)
 
 class DebsConf(object):
     """
     Debsources configuration reader.
     """
 
-    root_dir = os.path.abspath(__file__)
-    for _ in range(3):
-        root_dir = os.path.dirname(root_dir)
-
-    probable_confs = [
+    probable_conf_paths = [
         '/etc/debsources/config.yaml',
         '/srv/debsources/etc/config.local.yaml',
         '/srv/debsources/etc/config.yaml',
-        os.path.join(root_dir, 'etc', 'config.local.yaml'),
-        os.path.join(root_dir, 'etc', 'config.yaml'),
+        os.path.join(ROOT_DIR, 'etc', 'config.local.yaml'),
+        os.path.join(ROOT_DIR, 'etc', 'config.yaml'),
     ]
 
-    def __init__(self):
+    def __init__(self, conf_path=None):
+        # the parsed configuration
         self.config = None
 
-    def guess_conf(self):
+        # the path to the configuration file
+        self.conf_path = conf_path
+
+    @classmethod
+    def guess_conf_path(cls):
         """
         Returns the path of the first probable configuration file that exists
         and is not empty. Raises Exception if nothing is found.
         """
-        for conf in self.probable_confs:
-            if os.path.exists(conf):
-                if os.stat(conf).st_size:  # file is not empty
+        for conf_path in cls.probable_conf_paths:
+            if os.path.exists(conf_path):
+                if os.stat(conf_path).st_size:  # file is not empty
                     # TODO: debug
                     # Doing logging here prevents Flask's development server
                     # to output its usual logs in the terminal.
                     # logging.info('Configuration file found: %s' % conffile)
-                    return conf
+                    return conf_path
 
         raise EnvironmentError(
             errno.ENOENT,
-            'No configuration file found in {}'.format(self.probable_confs))
+            'No configuration file found in {}'.format(cls.probable_conf_paths))
 
-    def parse_section(self, conf=None, section="infra"):
+    def parse_section(self, section="infra"):
         """
         Load configuration from `conf` and return it as a (typed) dictionary
         for the section. If `conf` is not provided, then guess it.
@@ -123,34 +130,14 @@ class DebsConf(object):
         if self.config is not None:
             return self.config[section]
 
-        if conf is None:
-            conf = self.guess_conf()
+        if self.conf_path is None:
+            self.conf_path = self.guess_conf_path()
 
-        self.config = yaml.load(file(conf))
+        self.config = yaml.load(file(self.conf_path))
         # no check on if the section exists in the configuration file.
         # principle: if err, then let it err (early).
         settings = self.config[section]
         return settings
-
-
-def parse_conf_webapp(items):
-    """ returns correct typing for the [webapp] section """
-    typed = {}
-    for (key, value) in items:
-        if value.lower() == "false":
-            value = False
-        elif value.lower() == "true":
-            value = True
-        typed[key.upper()] = value  # Flask only understands CAPSLOCKED keys
-    return typed
-
-
-
-
-# ## define custom tag handler
-# def join(loader, node):
-#     seq = loader.construct_sequence(node)
-#     return ''.join([str(i) for i in seq])
 
 
 # def add_arguments(cmdline):

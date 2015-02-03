@@ -6,7 +6,8 @@ import logging
 from sqlalchemy import create_engine, bindparam, LargeBinary
 from sqlalchemy.sql import text as sql_query
 
-from debsources import mainlib
+from debsources.utils.conf import DebsConf
+from debsources.utils import logging as logging_
 from debsources import fs_storage
 from debsources.plugins.hook_checksums import parse_checksums
 
@@ -83,12 +84,15 @@ if __name__ == '__main__':
     cmdline = argparse.ArgumentParser(
         description='Debsources: bulk checksum insertion')
     cmdline.add_argument('--config', '-c', dest='conffile',
-                         default=mainlib.guess_conffile(),
+                         default=DebsConf.guess_conf_path(),
                          help='alternate configuration file')
     cmdline.add_argument('file', nargs='?',
                          help='.checksum metadata file')
     args = cmdline.parse_args()
-    conf = mainlib.load_configuration(args.conffile)
+    # TODO this legacy code won't work even before restructure.
+    # will do it later.
+    print("won't work, need further work on this.")
+    # conf = mainlib.load_configuration(args.conffile)
 
-    mainlib.init_logging(conf, logging.ERROR)
-    main(conf, sumsfile=args.file)
+    # mainlib.init_logging(conf, logging.ERROR)
+    # main(conf, sumsfile=args.file)
