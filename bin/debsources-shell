@@ -8,7 +8,7 @@ import argparse
 # from pprint import pprint
 
 from debsources.utils.conf import DebsConf
-from debsources import sqla_session
+from debsources.db import sqla_session
 
 from debsources.app import *  # NOQA
 
@@ -18,7 +18,7 @@ def main():
     os.environ['PYTHONINSPECT'] = 'True'
 
     conf = DebsConf().parse_section(section="infra")
-    engine, session = sqla_session._get_engine_session(conf['db_uri'])
+    engine, session = sqla_session.get_engine_session(conf['db_uri'])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

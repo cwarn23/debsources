@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import importlib
 import logging
 from logging import Formatter, FileHandler, StreamHandler
 
@@ -45,18 +46,17 @@ class AppWrapper(object):
             # config is a dict, or alike.
             self.app.config.update(config)
 
-    def go(self):
+    def ready(self):
         """
         Sets up SQLAlchemy, logging, and imports all the views.
         After creating an AppWrapper and calling this method, the app is ready.
         """
         if self.session is None:
             self.setup_sqlalchemy()
+        # we load all the enabled blueprints
+        self.setup_blueprints()
 
         self.setup_logging()
-
-        # importing the views creates all the routing for the app
-        from . import views
 
     def setup_conf(self):
         """
@@ -70,9 +70,9 @@ class AppWrapper(object):
         Creates an engine and a session for SQLAlchemy, using the database URI
         in the configuration.
         """
-        db_uri = self.app.config["SQLALCHEMY_DATABASE_URI"]
+        db_uri = self.app.config["sqlalchemy_database_uri"]
         e, s = get_engine_session(db_uri,
-                                   verbose=self.app.config["SQLALCHEMY_ECHO"])
+                                  verbose=self.app.config["sqlalchemy_echo"])
         self.engine, self.session = e, s
 
     def setup_logging(self):
@@ -83,7 +83,7 @@ class AppWrapper(object):
                         + '[in %(pathname)s:%(lineno)d]')
         log_level = logging.INFO
         try:
-            log_level = LOG_LEVELS[self.app.config["LOG_LEVEL"]]
+            log_level = LOG_LEVELS[self.app.config["log_level"]]
         except KeyError:  # might be raised by both "config" and "LOG_LEVELS",
             pass          # same treatment: fallback to default log_level
 
@@ -93,10 +93,24 @@ class AppWrapper(object):
         self.app.logger.addHandler(stream_handler)
 
         if "LOG_FILE" in self.app.config:
-            file_handler = FileHandler(self.app.config["LOG_FILE"])
+            file_handler = FileHandler(self.app.config["log_file"])
             file_handler.setFormatter(fmt)
             file_handler.setLevel(log_level)
             self.app.logger.addHandler(file_handler)
+
+    def setup_blueprints(self):
+        bps = self.app.config['blueprints']
+        for name, options in bps.iteritems():
+            bp_module = importlib.import_module('debsources.app.'+name)
+            bp = getattr(bp_module, 'bp_'+name)
+            self.app.register_blueprint(
+                bp,
+                subdomain=options['subdomain'],
+                template_folder='../{}/template'.format(name),
+                static_folder='../{}/static'.format(name),)
+
+    def run(self, *args, **kwargs):
+        self.app.run(*args, **kwargs)
 
 
 __all__ = ["AppWrapper"]

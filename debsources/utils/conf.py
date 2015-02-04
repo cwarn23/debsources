@@ -18,21 +18,19 @@
 
 from __future__ import absolute_import
 
-import importlib
 import errno
 import os
-import string
 
 import yaml
 from debian import deb822
 
-from debsources import updater
 # per custom, in order not to be confused with the builtin logging,
 # we add a trailing underscore.
 from debsources.utils import logging as logging_
 from debsources.updater import STAGES
 
 # NB try not to pollute the global namespace
+
 
 class YamlTags(object):
     """
@@ -67,20 +65,23 @@ class YamlTags(object):
     @staticmethod
     def upper(loader, node):
         mapping = loader.construct_mapping(node)
-        upper_mapping = {k.upper():v for k,v in mapping.iteritems()}
+        upper_mapping = {k.upper(): v for k, v in mapping.iteritems()}
         return upper_mapping
+
 
 # register tags
 yaml.add_constructor('!join', YamlTags.join)
 yaml.add_constructor('!loglevel', YamlTags.loglevel)
 yaml.add_constructor('!parse_stage', YamlTags.parse_stage)
 yaml.add_constructor('!exclude', YamlTags.exclude)
-yaml.add_constructor('!upper', YamlTags.upper)
+# NB not needed
+# yaml.add_constructor('!upper', YamlTags.upper)
 
 # help other module to find out the root
 ROOT_DIR = os.path.abspath(__file__)
 for _ in range(3):
     ROOT_DIR = os.path.dirname(ROOT_DIR)
+
 
 class DebsConf(object):
     """
@@ -119,7 +120,8 @@ class DebsConf(object):
 
         raise EnvironmentError(
             errno.ENOENT,
-            'No configuration file found in {}'.format(cls.probable_conf_paths))
+            'No configuration file found in {}'.format(
+                cls.probable_conf_paths))
 
     def parse_section(self, section="infra"):
         """

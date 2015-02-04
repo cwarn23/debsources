@@ -15,6 +15,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     from debsources.app import app_wrapper
-    app_wrapper.go()
+    app_wrapper.ready()
     print('Running on %s:%d' % (args.host, args.port))
-    app_wrapper.app.run(debug=True, host=args.host, port=args.port)
+    app_wrapper.run(debug=True, host=args.host, port=args.port)
