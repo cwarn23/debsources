@@ -46,6 +46,8 @@ class AppWrapper(object):
             # config is a dict, or alike.
             self.app.config.update(config)
 
+        self.ready()
+
     def ready(self):
         """
         Sets up SQLAlchemy, logging, and imports all the views.
@@ -106,8 +108,7 @@ class AppWrapper(object):
             self.app.register_blueprint(
                 bp,
                 subdomain=options['subdomain'],
-                template_folder='../{}/template'.format(name),
-                static_folder='../{}/static'.format(name),)
+                )
 
     def run(self, *args, **kwargs):
         self.app.run(*args, **kwargs)

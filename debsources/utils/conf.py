@@ -128,9 +128,11 @@ class DebsConf(object):
         Load configuration from `conf` and return it as a (typed) dictionary
         for the section. If `conf` is not provided, then guess it.
         """
+        settings = {}
         # already loaded
         if self.config is not None:
-            return self.config[section]
+            settings.update(self.config["default"], **self.config[section])
+            return settings
 
         if self.conf_path is None:
             self.conf_path = self.guess_conf_path()
@@ -138,7 +140,7 @@ class DebsConf(object):
         self.config = yaml.load(file(self.conf_path))
         # no check on if the section exists in the configuration file.
         # principle: if err, then let it err (early).
-        settings = self.config[section]
+        settings.update(self.config["default"], **self.config[section])
         return settings
 
 
