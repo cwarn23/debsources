@@ -1,0 +1,23 @@
+{#
+  Copyright (C) 2013  Matthieu Caneill <matthieu.caneill@gmail.com>
+  License: GNU Affero General Public License, version 3 or above.
+#}
+
+{% macro search_form(form, display="block") -%}
+  <form action="{{ url_for('.recv_search') }}" name="search_form"
+        method="post" style="display: {{ display }};">
+      {{ form.query(**kwargs) }}
+    {% for error in form.errors.query %}
+      {% if display == "block" %}<br />{% endif %}
+      <strong>{{ error }}</strong>
+    {% endfor %}
+    {% if display == "block" %}<br />{% endif %}
+    <input type="submit" value="Search package" />
+  </form>
+{%- endmacro %}
+
+{% macro render_packages_prefixes(prefixes) %}
+  {%- for prefix in prefixes %}
+    <a href="{{ url_for('.prefix', prefix=prefix) }}">{{ prefix }}</a>
+  {%- endfor %}
+{% endmacro %}

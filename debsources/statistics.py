@@ -26,7 +26,7 @@ from sqlalchemy import distinct
 from sqlalchemy import func as sql_func
 
 from debsources.consts import SLOCCOUNT_LANGUAGES, SUITES
-from debsources.models import Checksum, Ctag, Metric, SlocCount, \
+from debsources.db.models import Checksum, Ctag, Metric, SlocCount, \
     Suite, SuiteInfo, Package, PackageName
 
 
@@ -350,7 +350,7 @@ def sloc_per_package(session, suite=None, areas=None):
 
 
 def load_metadata_cache(fname):
-    """load a `stats.data` file and return its content as an integer-valued
+    """load a `sources_stats.data` file and return its content as an integer-valued
     dictionary
 
     """
@@ -363,7 +363,7 @@ def load_metadata_cache(fname):
 
 
 def save_metadata_cache(stats, fname):
-    """save a `stats.data` file, atomically, reading values from an
+    """save a `sources_stats.data` file, atomically, reading values from an
     integer-valued dictionary
 
     """

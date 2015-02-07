@@ -25,23 +25,3 @@ class InvalidPackageOrVersionError(ValueError):
 class FileOrFolderNotFound(Exception):
     """The Folder or File doesn't exist in the disk"""
     pass
-
-
-class Http500Error(Exception):
-    pass
-
-
-class Http404Error(Exception):
-    pass
-
-
-class Http404ErrorSuggestions(Http404Error):
-    def __init__(self, package, version, path):
-        self.package = package
-        self.version = version
-        self.path = path
-        super(Http404ErrorSuggestions, self).__init__()
-
-
-class Http403Error(Exception):
-    pass

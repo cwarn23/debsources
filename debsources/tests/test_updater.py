@@ -267,7 +267,7 @@ Action: remove""" % (PKG, EXCLUDED_GLOB)
 class MetadataCache(unittest.TestCase, DbTestFixture):
     """tests for on-disk cache of debsources metadata
 
-    usually stored in cache/stats.data
+    usually stored in cache/sources_stats.data
 
     """
 
@@ -279,7 +279,7 @@ class MetadataCache(unittest.TestCase, DbTestFixture):
 
         updater.update_statistics(dummy_status, self.conf, self.session)
 
-        stats_data = os.path.join(self.conf['cache_dir'], 'stats.data')
+        stats_data = os.path.join(self.conf['cache_dir'], 'sources_stats.data')
         self.stats = statistics.load_metadata_cache(stats_data)
 
     def tearDown(self):

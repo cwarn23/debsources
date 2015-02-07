@@ -407,12 +407,12 @@ def update_statistics(status, conf, session, suites=None):
     suites = __target_suites(session, suites)
 
     now = datetime.utcnow()
-    stats_file = os.path.join(conf['cache_dir'], 'stats.data')
+    stats_file = os.path.join(conf['cache_dir'], 'sources_stats.data')
     if os.path.exists(stats_file):
-        # If stats.data exists, load and update it, otherwise start from
+        # If sources_stats.data exists, load and update it, otherwise start from
         # scratch. Note: this means that we need to be careful about changing
         # stats keys, to avoid orphans.
-        # TODO: add check about orphan stats.data entries to debsources-fsck
+        # TODO: add check about orphan sources_stats.data entries to debsources-fsck
         stats = statistics.load_metadata_cache(stats_file)
     else:
         stats = {}

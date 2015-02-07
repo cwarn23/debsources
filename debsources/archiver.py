@@ -67,8 +67,8 @@ def _remove_stats_for(conf, session, suite):
     status = updater.UpdateStatus()
     if updater.STAGE_STATS in conf['stages']:
         updater.update_statistics(status, conf, session, [suite])
-        # remove newly orphan keys from stats.data
-        stats_file = os.path.join(conf['cache_dir'], 'stats.data')
+        # remove newly orphan keys from sources_stats.data
+        stats_file = os.path.join(conf['cache_dir'], 'sources_stats.data')
         stats = statistics.load_metadata_cache(stats_file)
         for k in stats.keys():
             if k.startswith('debian_' + suite + '.'):

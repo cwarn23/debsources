@@ -121,9 +121,9 @@ class Archiver(unittest.TestCase, DbTestFixture):
     @attr('slow')
     def removesStickySuite(self):
         SARGE_PACKAGES = [('asm', '1.5.2-1'), ('zziplib', '0.12.83-4')]
-        stats_file = os.path.join(self.conf['cache_dir'], 'stats.data')
+        stats_file = os.path.join(self.conf['cache_dir'], 'sources_stats.data')
 
-        # to test stats.data cleanup
+        # to test sources_stats.data cleanup
         self.conf['stages'] = self.TEST_STAGES.union(
             set([updater.STAGE_STATS]))
         archiver.add_suite(self.conf, self.session, 'sarge', self.archive)

@@ -8,13 +8,13 @@ License: GNU Affero General Public License, version 3 or above.
 
 /* displayed on index.html */
 
-#indexmenu {
+#index_menu {
     text-align: center;
     padding-top: 20px;
     padding-bottom: 20px;
 }
 
-#bg-wrapper {
+#bg_wrapper {
     /* background-image is set up in base.html, to use jinja2 url_for() */
     background-position: left center;
     background-repeat: no-repeat;
@@ -26,14 +26,14 @@ License: GNU Affero General Public License, version 3 or above.
     padding-top: 0;
 }
 
-#indexmenu table {
+#index_menu table {
     width: 700px;
     margin: auto;
     border-spacing: 20px;
     border-spacing: collapse;
 }
 
-#indexmenu table td {
+#index_menu table td {
     border: 0;
     padding: 5px;
     padding-top: 0px;
@@ -44,17 +44,17 @@ License: GNU Affero General Public License, version 3 or above.
     border-radius: 15px;
 }
 
-#indexmenu table td p {
+#index_menu table td p {
     text-align: center;
     margin-bottom: 1em;
     margin-top: 0.5em;
 }
-#indexmenu table td ul {
+#index_menu table td ul {
     margin-bottom: 1em;
     margin-top: 0.5em;
 }
 
-#indexmenu table #search {
+#index_menu table #search {
     width: 60%;
 }
 
