@@ -46,8 +46,6 @@ class AppWrapper(object):
             # config is a dict, or alike.
             self.app.config.update(config)
 
-        self.ready()
-
     def ready(self):
         """
         Sets up SQLAlchemy, logging, and imports all the views.

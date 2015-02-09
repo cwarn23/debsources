@@ -16,4 +16,5 @@ if __name__ == "__main__":
 
     from debsources.app import app_wrapper
     print('Running on %s:%d' % (args.host, args.port))
+    app_wrapper.ready()
     app_wrapper.run(debug=True, host=args.host, port=args.port)

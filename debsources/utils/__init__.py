@@ -3,11 +3,6 @@ import os
 path_join = os.path.join
 
 
-def get_endp():
-    import flask
-    return flask.request.endpoint.rsplit('.', 1)[-1]
-
-
 def extract_stats(filter_suites=None, filename="cache/sources_stats.data"):
     """
     Extracts information from the collected stats.
@@ -26,3 +21,18 @@ def extract_stats(filter_suites=None, filename="cache/sources_stats.data"):
             res[key] = value
 
     return res
+
+
+# TODO we should use methods like LRU to avoid this un-necessary disk I/O
+def get_packages_prefixes(cache_dir):
+    """
+    returns the packages prefixes (a, b, ..., liba, libb, ..., y, z)
+    cache_dir: the cache directory, usually comes from the app config
+    """
+    try:
+        with open(path_join(cache_dir, 'pkg-prefixes')) as f:
+            prefixes = [l.rstrip() for l in f]
+    except IOError:
+        prefixes = PREFIXES_DEFAULT
+    return prefixes
+

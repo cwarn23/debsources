@@ -15,87 +15,91 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from functools import partial
-
 from flask import (redirect, url_for, request, current_app, render_template,
                    jsonify)
 from flask.views import View
 
-from debsources.utils import local_info, path_join, get_endp
+from debsources.utils import local_info, path_join, get_packages_prefixes
+from debsources.app import app_wrapper
+from debsources.db import query as q
+from debsources.db import models
+
+from .utils import format_big_num, Pagination
 
 from . import forms
+from .exceptions import (HTTP403Error, HTTP404Error, HTTP500Error,
+                         HTTP404ErrorSuggestions)
+
+app = app_wrapper.app
+session = app_wrapper.session
+
+
+# Jinja2 environment helpers
+
+app.jinja_env.filters['format_big_num'] = format_big_num
+
 
 # ERRORS
-def deal_error(error, http=404, mode='html'):
-    """ spreads the error in the right place (404 or 500) """
-    if http == 404:
-        return deal_404_error(error, mode)
-    elif http == 500:
-        return deal_500_error(error, mode)
-    elif http == 403:
-        return deal_403_error(error, mode)
-    else:
-        raise Exception("Unimplemented HTTP error: %s" % str(http))
+class ErrorHandler(object):
+
+    def __init__(self, bp_name='', mode='html'):
+        self.mode = mode
+        self.bp_name = bp_name
+
+    def __call__(self, error, http=404):
+        try:
+            method = getattr(self, 'error_{}'.format(http))
+        except:
+            raise Exception("Unimplemented HTTP error: {}".format(http))
+        method(error)
+
+    def error_403(self, error):
+        if self.mode == 'json':
+            return jsonify(dict(error=403))
+        else:
+            return render_template(path_join(self.bp_name, '403.html')), 403
+
+    def error_404(self, error):
+        if self.mode == 'json':
+            return jsonify(dict(error=404))
+        else:
+            if isinstance(error, HTTP404ErrorSuggestions):
+                # let's suggest all the possible locations with a different
+                # package version
+                possible_versions = q.pkg_versions(session, error.package)
+                suggestions = ['/'.join(
+                    filter(None, [error.package, v.version, error.path]))
+                    for v in possible_versions]
+                return render_template(
+                    path_join(self.bp_name, '404_suggestions.html'),
+                    suggestions=suggestions), 404
+            else:
+                return render_template(
+                    path_join(self.bp_name, '404.html')), 404
+
+    def error_500(self, error):
+        """
+        logs a 500 error and returns the correct template
+        """
+        app.logger.exception(error)
+
+        if self.mode == 'json':
+            return jsonify(dict(error=500))
+        else:
+            return render_template(
+                path_join(self.bp_name, '500.html')), 500
 
 
-def deal_404_error(error, mode='html'):
-    if mode == 'json':
-        return jsonify(dict(error=404))
-    else:
-        pass
-        # TODO
-        # if isinstance(error, HTTP404ErrorSuggestions):
-            # let's suggest all the possible locations with a different
-            # package version
-            # possible_versions = PackageName.list_versions(
-            #     session, error.package)
-            # suggestions = ['/'.join(filter(None,
-            #                         [error.package, v.version, error.path]))
-            #                for v in possible_versions]
-            # return render_template('404_suggestions.html',
-            #                        suggestions=suggestions), 404
-        # else:
-            # return render_template('404.html'), 404
-
-
-# @app.errorhandler(404)
-def page_not_found(e):
-    return deal_404_error(e)
-
-
-def deal_500_error(error, mode='html'):
-    """ logs a 500 error and returns the correct template """
-    app.logger.exception(error)
-
-    if mode == 'json':
-        return jsonify(dict(error=500))
-    else:
-        return render_template('500.html'), 500
-
-
-# @app.errorhandler(500)
-def server_error(e):
-    return deal_500_error(e)
-
-
-def deal_403_error(error, mode='html'):
-    if mode == 'json':
-        return jsonify(dict(error=403))
-    else:
-        return render_template('403.html'), 403
-
-
-# @app.errorhandler(403)  # NOQA
-def server_error(e):
-    return deal_403_error(e)
+app.errorhandler(403)(lambda _: ("Forbidden", 403))
+app.errorhandler(404)(lambda _: ("File not Found", 404))
+app.errorhandler(500)(lambda _: ("Server Error", 500))
 
 
 # for both rendering and api
 class GeneralView(View):
     def __init__(self,
-                 tpl_name=None,
-                 render_func=render_template,
-                 err_func=deal_error,
+                 render_func=jsonify,
+                 err_func=None,
                  get_objects=None,
                  **kwargs):
         """
@@ -103,13 +107,7 @@ class GeneralView(View):
         err_func: the function called when an error occurs
         get_objects: the function called to get context objects.
         """
-        if isinstance(render_func, basestring):
-            self.render_func = getattr(self, render_func)
-        else:
-            self.render_func = render_func
-        if tpl_name and self.render_func is render_template:
-            self.render_func = partial(self.render_func, tpl_name)
-
+        self.render_func = render_func
         self.err_func = err_func
 
         if get_objects:
@@ -133,48 +131,37 @@ class GeneralView(View):
         try:
             context = self.get_objects(**kwargs)
             return self.render_func(**context)
-        except Http404Error as e:
+        except HTTP404Error as e:
             return self.err_func(e, http=404)
-        except Http403Error as e:
+        except HTTP403Error as e:
             return self.err_func(e, http=403)
-        # return HTTP500 as final resolution
-        except Exception as e:
+        except HTTP500Error as e:
             return self.err_func(e, http=500)
-
-
-# for simple rendering of html
-class RenderView(View):
-
-    def __init__(self, **kwargs):
-        self.d = kwargs
-
-    def dispatch_request(self, **kwargs):
-        # we omit the blueprint name
-        endp = get_endp()
-        # the templates names are
-        # doc{,_url,_api,_overview}_html
-        return render_template(self.d[endp+'_html'], **kwargs)
+        # # 500 as final resolution
+        # except Exception as e:
+        #     return self.err_func(e, http=500)
+        # XXX for debug, we comment it.
 
 
 # for '/'
-class IndexView(RenderView):
+class IndexView(GeneralView):
 
-    def dispatch_request(self, **kwargs):
+    def get_objects(self, **kwargs):
         news_file = path_join(current_app.config["local_dir"],
                               self.d['news_html'])
         news = local_info.read_html(news_file)
-        return super(IndexView, self).dispatch_request(news=news)
+        return dict(news=news)
 
 
 # for /docs/*
-class DocView(RenderView):
+class DocView(GeneralView):
     """
     Renders page for /doc/*
     """
 
 
 # for /about/
-class AboutView(RenderView):
+class AboutView(GeneralView):
     """
     Renders page for /about/
     """
@@ -182,19 +169,71 @@ class AboutView(RenderView):
 
 # for /prefix/*
 class PrefixView(GeneralView):
-    """
-    TODO
-    """
+
+    def get_objects(self, prefix='a'):
+        """
+        returns the packages beginning with prefix
+        and belonging to suite if specified.
+        """
+        prefix = prefix.lower()
+        suite = request.args.get("suite") or ""
+        suite = suite.lower()
+        if suite == "all":
+            suite = ""
+        if prefix in get_packages_prefixes(app.config["cache_dir"]):
+            try:
+                packages = q.pkg_prefixes(session, prefix=prefix, suite=suite)
+            except Exception as e:
+                raise HTTP500Error(e)
+
+            packages = [p.to_dict() for p in packages]
+            return dict(packages=packages,
+                        prefix=prefix,
+                        suite=suite)
+        else:
+            raise HTTP404Error("prefix unknown: {}".format(prefix))
 
 
 # for /list/*
 class ListPackagesView(GeneralView):
-    """
-    TODO
-    """
+
+    def get_objects(self, page=1):
+        if self.d.get('api'):  # we retrieve all packages
+            try:
+                packages = (session.query(models.PackageName)
+                            .order_by(models.PackageName.name)
+                            .all()
+                            )
+                packages = [p.to_dict() for p in packages]
+                return dict(packages=packages)
+            except Exception as e:
+                raise HTTP500Error(e)
+        else:  # we paginate
+            # WARNING: not serializable (TODO: serialize Pagination obj)
+            try:
+                offset = int(current_app.config.get("list_offset") or 60)
+
+                # we calculate the range of results
+                start = (page - 1) * offset
+                end = start + offset
+
+                count_packages = (session.query(models.PackageName)
+                                  .count()
+                                  )
+                packages = (session.query(models.PackageName)
+                            .order_by(models.PackageName.name)
+                            .slice(start, end)
+                            )
+                pagination = Pagination(page, offset, count_packages)
+
+                return dict(packages=packages,
+                            page=page,
+                            pagination=pagination)
+
+            except Exception as e:
+                raise Http500Error(e)
 
 
-# NB endp is short for endpoint
 class SearchView(GeneralView):
 
     def get_objects(self, **kwargs):
@@ -217,3 +256,5 @@ class SearchView(GeneralView):
             # we return the form, to display the errors
             return render_template(self.d['index_html'],
                                    search_form=search_form)
+
+

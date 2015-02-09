@@ -65,35 +65,6 @@ class PackageName(Base):
         return self.name
 
     @staticmethod
-    def list_versions(session, packagename, suite=""):
-        """
-        return all versions of a packagename. if suite is specified, only
-        versions contained in that suite are returned.
-        """
-        try:
-            name_id = session.query(PackageName) \
-                             .filter(PackageName.name == packagename) \
-                             .first().id
-        except Exception:
-            raise InvalidPackageOrVersionError(packagename)
-        try:
-            if not suite:
-                versions = session.query(Package) \
-                                  .filter(Package.name_id == name_id).all()
-            else:
-                versions = (session.query(Package)
-                                   .filter(Package.name_id == name_id)
-                                   .filter(sql_func.lower(Suite.suite)
-                                           == suite)
-                                   .filter(Suite.package_id == Package.id)
-                                   .all())
-        except Exception:
-            raise InvalidPackageOrVersionError(packagename)
-        # we sort the versions according to debian versions rules
-        versions = sorted(versions, cmp=version_compare)
-        return versions
-
-    @staticmethod
     def list_versions_w_suites(session, packagename, suite=""):
         """
         return versions with suites. if suite is provided, then only return

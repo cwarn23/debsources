@@ -1,9 +1,23 @@
-# from http://flask.pocoo.org/snippets/44/
-
+from functools import partial
 from math import ceil
+
+from flask import render_template, request, url_for
+
+
+def bind_render(template, **kwargs):
+    return partial(render_template, template, **kwargs)
+
+
+def format_big_num(num):
+    try:
+        res = "{:,}".format(num)
+    except:
+        res = num
+    return res
 
 
 class Pagination(object):
+
     def __init__(self, page, per_page, total_count):
         self.page = page
         self.per_page = per_page
@@ -33,3 +47,9 @@ class Pagination(object):
                     yield None
                 yield num
                 last = num
+
+    @staticmethod
+    def url_for_other_page(page):
+        args = dict(request.args.copy())
+        args['page'] = page
+        return url_for(request.endpoint, **args)
