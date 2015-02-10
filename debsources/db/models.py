@@ -309,41 +309,6 @@ class Ctag(Base):
     #                .filter(Ctag.tag in ctags)
     #                .filter(Ctag
 
-    @staticmethod
-    def find_ctag(session, ctag, package=None, slice_=None):
-        """
-        Returns places in the code where a ctag is found.
-             tuple (count, [sliced] results)
-
-        session: an SQLAlchemy session
-        ctag: the ctag to search
-        package: limit results to package
-        """
-
-        results = (session.query(PackageName.name.label("package"),
-                                 Package.version.label("version"),
-                                 Ctag.file_id.label("file_id"),
-                                 File.path.label("path"),
-                                 Ctag.line.label("line"))
-                   .filter(Ctag.tag == ctag)
-                   .filter(Ctag.package_id == Package.id)
-                   .filter(Ctag.file_id == File.id)
-                   .filter(Package.name_id == PackageName.id)
-                   )
-        if package is not None:
-            results = results.filter(PackageName.name == package)
-
-        results = results.order_by(Ctag.package_id, File.path)
-        count = results.count()
-        if slice_ is not None:
-            results = results.slice(slice_[0], slice_[1])
-        results = [dict(package=res.package,
-                        version=res.version,
-                        path=res.path,
-                        line=res.line)
-                   for res in results.all()]
-        return (count, results)
-
 
 class Metric(Base):
     __tablename__ = 'metrics'

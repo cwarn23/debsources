@@ -23,6 +23,7 @@ from debsources.utils import local_info, path_join, get_packages_prefixes
 from debsources.app import app_wrapper
 from debsources.db import query as q
 from debsources.db import models
+from debsources.consts import SUITES
 
 from .utils import format_big_num, Pagination
 
@@ -99,7 +100,7 @@ app.errorhandler(500)(lambda _: ("Server Error", 500))
 class GeneralView(View):
     def __init__(self,
                  render_func=jsonify,
-                 err_func=None,
+                 err_func=lambda *args, **kwargs: "OOPS! Error occurred.",
                  get_objects=None,
                  **kwargs):
         """
@@ -236,12 +237,42 @@ class ListPackagesView(GeneralView):
 
 class SearchView(GeneralView):
 
-    def get_objects(self, **kwargs):
-        if self.render_func == self.recv_search:
-            # equality is tested on .im_self, .im_func
-            return dict()
+    def dispatch_request(self, **kwargs):
+        if self.d.get('recv_search'):
+            return self.recv_search()
         else:
-            pass
+            return super(SearchView, self).dispatch_request(**kwargs)
+
+    def get_query(self, query=''):
+        """
+        processes the search query and renders the results in a dict
+        """
+        query = query.replace('%', '').replace('_', '')
+        suite = request.args.get("suite") or ""
+        suite = suite.lower()
+        if suite == "all":
+            suite = ""
+
+        try:
+            exact_matching, other_results = q.search_query(
+                session, query, suite)
+        except Exception as e:
+            raise HTTP500Error(e)  # db problem, ...
+
+        if exact_matching is not None:
+            exact_matching = exact_matching.to_dict()
+        if other_results is not None:
+            other_results = [o.to_dict() for o in other_results]
+            # we exclude the 'exact' matching from other_results:
+            other_results = filter(lambda x: x != exact_matching,
+                                   other_results)
+
+        results = dict(exact=exact_matching,
+                       other=other_results)
+        return dict(results=results, query=query, suite=suite)
+
+    def get_advanced(self):
+        return dict(suites_list=SUITES["all"])
 
     # for '/search/'
     def recv_search(self, **kwargs):
@@ -251,10 +282,86 @@ class SearchView(GeneralView):
             suite = search_form.suite.data
             if suite:
                 params["suite"] = suite
-            return redirect(url_for(self.d['.search_endp'], **params))
+            return redirect(url_for('.search', **params))
         else:
             # we return the form, to display the errors
-            return render_template(self.d['index_html'],
-                                   search_form=search_form)
+            return self.render_func(search_form=search_form)
 
 
+class ChecksumView(GeneralView):
+
+    def get_objects(self, **kwargs):
+        """
+        Returns the files whose checksum corresponds to the one given.
+        """
+        try:
+            page = int(request.args.get("page"))
+        except:
+            page = 1
+        checksum = request.args.get("checksum")
+        package = request.args.get("package") or None
+
+        count = q.checksum_count(session, checksum, package)
+
+        # pagination:
+        if self.d.get('pagination'):
+            offset = int(current_app.config.get("LIST_OFFSET") or 60)
+            start = (page - 1) * offset
+            end = start + offset
+            slice_ = (start, end)
+            pagination = Pagination(page, offset, count)
+        else:
+            pagination = None
+            slice_ = None
+
+        # finally we get the files list
+        results = q.files_with_sum(
+            session, checksum, slice_=slice_, package=package)
+
+        return dict(results=results,
+                    sha256=checksum,
+                    count=count,
+                    page=page,
+                    pagination=pagination)
+
+
+class CtagView(GeneralView):
+
+    def get_objects(self):
+        """
+        Returns the places where ctag are found.
+        (limit to package if package is not None)
+        """
+        try:
+            page = int(request.args.get("page"))
+        except:
+            page = 1
+        ctag = request.args.get("ctag")
+        package = request.args.get("package") or None
+
+        # pagination:
+        if self.d.get('pagination'):
+            try:
+                offset = current_app.config.get("list_offset")
+            except:
+                offset = 60
+            start = (page - 1) * offset
+            end = start + offset
+            slice_ = (start, end)
+        else:
+            pagination = None
+            slice_ = None
+
+        count, results = q.find_ctag(session, ctag, slice_=slice_,
+                                       package=package)
+        if self.d.get('pagination'):
+            pagination = Pagination(page, offset, count)
+        else:
+            pagination = None
+
+        return dict(results=results,
+                    ctag=ctag,
+                    count=count,
+                    page=page,
+                    package=package,
+                    pagination=pagination)
