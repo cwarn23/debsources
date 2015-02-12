@@ -3,12 +3,12 @@
   License: GNU Affero General Public License, version 3 or above.
 #}
 
-{% extends "source_base.html" %}
+{% extends "sources/source_base.html" %}
 
 {% block head %}
 {{ super() }}
 <link rel="stylesheet" type="text/css"
-      href="{{ url_for('static', filename='css/source_folder.css') }}" />
+      href="{{ url_for('.static', filename='sources/css/source_folder.css') }}" />
 {% endblock %}
 
 {% block title %}Folder: {{ directory }}{% endblock %}
@@ -16,7 +16,7 @@
 {% block source_content %}
 
 {% if pkg_infos %}
-{% import "infobox.inc.html" as infobox %}
+{% import "sources/infobox.inc.html" as infobox %}
 {{ infobox.render_infobox(pathl[0][0], pathl[1][0], pkg_infos) }}
 {% endif %}
 
@@ -24,16 +24,16 @@
 
 <table class="dir-listing">
   <tr>
-    <td class="item-img"><img src="{{ config['ICONS_FOLDER'] }}22x22/places/folder.png" alt="d " /></td>
-    {% if config["DIR_LS_LONG"] %}<td class="stat-type"></td>{% endif %} <!-- place-holder -->
+    <td class="item-img"><img src="{{ config['icons_folder'] }}22x22/places/folder.png" alt="d " /></td>
+    {% if config["dir_ls_long"] %}<td class="stat-type"></td>{% endif %} <!-- place-holder -->
     <td class="stat-perms"></td> <!-- place-holder -->
-    {% if config["DIR_LS_LONG"] %}<td class="stat-size"></td>{% endif %} <!-- place-holder -->
-    <td class="item-name"><a href="{{ url_for('source_html', path_to='/'.join(path.split('/')[:-1])) }}">.. (parent)</a></td>
+    {% if config["dir_ls_long"] %}<td class="stat-size"></td>{% endif %} <!-- place-holder -->
+    <td class="item-name"><a href="{{ url_for('.source_html', path_to='/'.join(path.split('/')[:-1])) }}">.. (parent)</a></td>
   </tr>
 
 {% for dir in subdirs %}
   <tr>
-    <td class="item-img"><img src="{{ config['ICONS_FOLDER'] }}22x22/places/folder.png" alt="d " /></td>
+    <td class="item-img"><img src="{{ config['icons_folder'] }}22x22/places/folder.png" alt="d " /></td>
     {% if config["DIR_LS_LONG"] %}<td class="stat-type"><span>{{ dir.stat.type }}</span></td>{% endif %}
     <td class="stat-perms"><span>{{ dir.stat.perms }}</span></td>
     {% if config["DIR_LS_LONG"] %}<td class="stat-size"><span>{{ "{:,d}".format(dir.stat.size) }}</span></td>{% endif %}
@@ -47,7 +47,7 @@
 
 {% for file_ in subfiles %}
   <tr>
-    <td class="item-img"><img src="{{ config['ICONS_FOLDER'] }}22x22/mimetypes/ascii.png" alt="- " /></td>
+    <td class="item-img"><img src="{{ config['icons_folder'] }}22x22/mimetypes/ascii.png" alt="- " /></td>
     {% if config["DIR_LS_LONG"] %}<td class="stat-type"><span>{{ file_.stat.type }}</span></td>{% endif %}
     <td class="stat-perms"><span>{{ file_.stat.perms }}</span></td>
     {% if config["DIR_LS_LONG"] %}<td class="stat-size"><span>{{ "{:,d}".format(file_.stat.size) }}</span></td>{% endif %}

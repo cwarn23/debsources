@@ -1,10 +1,12 @@
 from sqlalchemy import func as sql_func
+from debian.debian_support import version_compare
 
 from debsources.consts import PREFIXES_DEFAULT
 from debsources.exceptions import InvalidPackageOrVersionError
 from debsources.utils import path_join
 
 from .models import Package, PackageName, Suite, Ctag, File, Checksum
+from ..consts import SUITES
 
 
 def pkg_versions(session, packagename, suite=""):
@@ -163,3 +165,32 @@ def checksum_count(session, checksum, package=None):
                     .filter(Package.name_id == PackageName.id))
     count = count.first()[0]
     return count
+
+
+def pkg_versions_w_suites(session, packagename, suite=""):
+    """
+    return versions with suites. if suite is provided, then only return
+    versions contained in that suite.
+    """
+    # FIXME a left outer join on (Package, Suite) is more preferred.
+    # However, per https://stackoverflow.com/a/997467, custom aggregation
+    # function to concatenate the suite names for the group_by should be
+    # defined on database connection level.
+    versions = pkg_versions(session, packagename, suite)
+    versions_w_suites = []
+    try:
+        for v in versions:
+            suites = session.query(Suite) \
+                            .filter(Suite.package_id == v.id) \
+                            .all()
+            # sort the suites according to debsources.consts.SUITES
+            # use keyfunc to make it py3 compatible
+            suites.sort(key=lambda s: SUITES['all'].index(s.suite))
+            suites = [s.suite for s in suites]
+            v = v.to_dict()
+            v['suites'] = suites
+            versions_w_suites.append(v)
+    except Exception:
+        raise InvalidPackageOrVersionError(packagename)
+
+    return versions_w_suites

@@ -25,7 +25,7 @@ from debsources.db import query as q
 from debsources.db import models
 from debsources.consts import SUITES
 
-from .utils import format_big_num, Pagination
+from .helper import format_big_num, Pagination
 
 from . import forms
 from .exceptions import (HTTP403Error, HTTP404Error, HTTP500Error,
@@ -52,7 +52,7 @@ class ErrorHandler(object):
             method = getattr(self, 'error_{}'.format(http))
         except:
             raise Exception("Unimplemented HTTP error: {}".format(http))
-        method(error)
+        return method(error)
 
     def error_403(self, error):
         if self.mode == 'json':

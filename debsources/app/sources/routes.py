@@ -6,9 +6,25 @@ from ..app.views import (IndexView, DocView, SearchView, AboutView, PrefixView,
 # error funcs
 from ..app.views import ErrorHandler
 from ..app.utils import bind_render
+from debsources.app import app_wrapper
 
 from . import bp_sources
 from .views import StatsView, SourceView
+
+app = app_wrapper.app
+
+# STATIC FILES
+# XXX if the url belongs to a subdomain, then routes registered on app
+# won't be triggered.
+if app.config.get('serve_static_files'):
+    import flask
+    @bp_sources.route('/javascript/<path:path>')
+    def javascript(path):
+        return flask.send_from_directory('/usr/share/javascript/', path)
+
+    @bp_sources.route('/icons/<path:path>')
+    def icons(path):
+        return flask.send_from_directory('/usr/share/icons/', path)
 
 
 # INDEXVIEW
@@ -154,3 +170,27 @@ bp_sources.add_url_rule(
         render_func=bind_render('sources/ctag.html'),
         err_func=ErrorHandler('sources'),
         pagination=True))
+
+
+# SourceView
+# package
+# bp_sources.add_url_rule('/src/<package>/', view_func=SourceView.as_view(
+#     'source_html',
+#     render_func=lambda **kwargs: render_source_file_html("source_file.html",
+#                                                          **kwargs),
+#     err_func=lambda e, **kwargs: deal_error(e, mode='html', **kwargs)
+# ))
+bp_sources.add_url_rule(
+    '/src/<package>/',
+    view_func=SourceView.as_view(
+        'source_package',
+        err_func=ErrorHandler('sources'),
+        get_objects="package"))
+
+# folder and files
+bp_sources.add_url_rule(
+    '/src/<package>/<path:location>/',
+    view_func=SourceView.as_view(
+        'source_location',
+        err_func=ErrorHandler('sources'),
+        get_objects="location"))
